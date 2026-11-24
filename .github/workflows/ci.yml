@@ -21,13 +21,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++ lcov
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++ gcovr
       - run: ./test.sh coverage
       - name: Coverage report
-        run: |
-          lcov --capture --directory build/coverage --output-file coverage.info --ignore-errors mismatch
-          lcov --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
-          lcov --summary coverage.info
+        run: gcovr --root . --filter 'src/' --filter 'include/' --print-summary build/coverage
 
   static-analysis:
     runs-on: ubuntu-24.04
