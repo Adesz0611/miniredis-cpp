@@ -13,6 +13,7 @@ include(GoogleTest)
 
 add_executable(miniredis_tests
     test_store.cpp
+    test_eviction.cpp
     test_commands.cpp
     test_command_factory.cpp
 )

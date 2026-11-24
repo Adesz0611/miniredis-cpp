@@ -21,6 +21,8 @@ include(cmake/CompilerOptions.cmake)
 
 add_library(miniredis_core
     src/store.cpp
+    src/lru_policy.cpp
+    src/lfu_policy.cpp
     src/commands.cpp
     src/command_factory.cpp
 )

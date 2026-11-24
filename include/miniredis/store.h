@@ -1,9 +1,11 @@
 #pragma once
 
 #include "miniredis/clock.h"
+#include "miniredis/eviction_policy.h"
 
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -16,6 +18,11 @@ class Store {
 public:
     /// The clock must outlive the store.
     explicit Store(const Clock& clock = SystemClock::instance());
+
+    /// Store holding at most @p capacity keys (0 means unlimited). When it is full, the
+    /// policy picks the key to evict. A non-zero capacity requires a policy.
+    Store(std::size_t capacity, std::unique_ptr<EvictionPolicy> policy,
+          const Clock& clock = SystemClock::instance());
 
     /// Overwrites the value and clears any expiry on the key.
     void set(const std::string& key, std::string value);
@@ -40,8 +47,12 @@ private:
     };
 
     bool isExpired(const Entry& entry) const;
+    std::size_t removeExpiredLocked();
+    void makeRoom();
 
     const Clock& clock_;
+    std::size_t capacity_ = 0;
+    std::unique_ptr<EvictionPolicy> policy_;
     mutable std::mutex mutex_;
     std::unordered_map<std::string, Entry> data_;
 };
