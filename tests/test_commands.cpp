@@ -1,5 +1,6 @@
 #include "miniredis/commands.h"
 
+#include "manual_clock.h"
 #include <gtest/gtest.h>
 
 using namespace miniredis;
@@ -22,4 +23,18 @@ TEST(CommandsTest, DelReturnsOneWhenKeyExisted) {
     s.set("k", "v");
     EXPECT_EQ(DelCommand("k").execute(s), "1");
     EXPECT_EQ(DelCommand("k").execute(s), "0");
+}
+
+TEST(CommandsTest, ExpireReturnsOneForExistingKey) {
+    ManualClock clock;
+    Store s(clock);
+    s.set("k", "v");
+    EXPECT_EQ(ExpireCommand("k", std::chrono::seconds(5)).execute(s), "1");
+    clock.advance(std::chrono::seconds(5));
+    EXPECT_EQ(GetCommand("k").execute(s), "(nil)");
+}
+
+TEST(CommandsTest, ExpireReturnsZeroForMissingKey) {
+    Store s;
+    EXPECT_EQ(ExpireCommand("k", std::chrono::seconds(5)).execute(s), "0");
 }

@@ -23,4 +23,11 @@ DelCommand::DelCommand(std::string key) : key_(std::move(key)) {}
 
 std::string DelCommand::execute(Store& store) const { return store.del(key_) ? "1" : "0"; }
 
+ExpireCommand::ExpireCommand(std::string key, std::chrono::seconds ttl)
+    : key_(std::move(key)), ttl_(ttl) {}
+
+std::string ExpireCommand::execute(Store& store) const {
+    return store.expire(key_, ttl_) ? "1" : "0";
+}
+
 }  // namespace miniredis
