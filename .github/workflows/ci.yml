@@ -1,0 +1,39 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [debug, release, asan, tsan]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++
+      - name: Build
+        run: cmake --preset ${{ matrix.preset }} -DMINIREDIS_WARNINGS_AS_ERRORS=ON && cmake --build --preset ${{ matrix.preset }} -j
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}
+
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++ lcov
+      - run: ./test.sh coverage
+      - name: Coverage report
+        run: |
+          lcov --capture --directory build/coverage --output-file coverage.info --ignore-errors mismatch
+          lcov --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
+          lcov --summary coverage.info
+
+  static-analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++ clang-tidy clang-format
+      - run: cmake --preset debug
+      - run: clang-format --dry-run --Werror $(git ls-files '*.h' '*.cpp')
+      - run: clang-tidy -p build/debug $(git ls-files 'src/*.cpp')
