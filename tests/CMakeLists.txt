@@ -13,6 +13,7 @@ include(GoogleTest)
 
 add_executable(miniredis_tests
     test_store.cpp
+    test_commands.cpp
 )
 target_link_libraries(miniredis_tests PRIVATE miniredis_core GTest::gtest_main)
 miniredis_set_options(miniredis_tests)
