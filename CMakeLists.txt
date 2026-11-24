@@ -21,6 +21,8 @@ include(cmake/CompilerOptions.cmake)
 
 add_library(miniredis_core
     src/store.cpp
+    src/commands.cpp
+    src/command_factory.cpp
 )
 target_include_directories(miniredis_core PUBLIC include)
 miniredis_set_options(miniredis_core)
