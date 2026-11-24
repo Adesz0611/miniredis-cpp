@@ -1,9 +1,9 @@
 #include "miniredis/store.h"
 
-#include <gtest/gtest.h>
-
 #include <thread>
 #include <vector>
+
+#include <gtest/gtest.h>
 
 using miniredis::Store;
 

@@ -21,8 +21,6 @@ std::string GetCommand::execute(Store& store) const {
 
 DelCommand::DelCommand(std::string key) : key_(std::move(key)) {}
 
-std::string DelCommand::execute(Store& store) const {
-    return store.del(key_) ? "1" : "0";
-}
+std::string DelCommand::execute(Store& store) const { return store.del(key_) ? "1" : "0"; }
 
 }  // namespace miniredis
