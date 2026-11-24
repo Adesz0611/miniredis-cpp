@@ -52,3 +52,19 @@ TEST(CommandFactoryTest, CustomCommandCanBeRegistered) {
     Store s;
     EXPECT_EQ(f.create("ping")->execute(s), "PONG");
 }
+
+TEST(CommandFactoryTest, ParsesExpire) {
+    CommandFactory f;
+    Store s;
+    s.set("a", "1");
+    EXPECT_EQ(f.create("EXPIRE a 30")->execute(s), "1");
+}
+
+TEST(CommandFactoryTest, RejectsInvalidExpireArguments) {
+    CommandFactory f;
+    EXPECT_THROW(f.create("EXPIRE a"), ParseError);
+    EXPECT_THROW(f.create("EXPIRE a soon"), ParseError);
+    EXPECT_THROW(f.create("EXPIRE a 10s"), ParseError);
+    EXPECT_THROW(f.create("EXPIRE a 0"), ParseError);
+    EXPECT_THROW(f.create("EXPIRE a -5"), ParseError);
+}

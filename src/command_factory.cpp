@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <sstream>
 
 namespace miniredis {
@@ -22,6 +23,18 @@ void requireArgs(const CommandFactory::Args& args, std::size_t expected, const c
     }
 }
 
+std::chrono::seconds parseSeconds(const std::string& text) {
+    long long value = 0;
+    auto [end, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+    if (ec != std::errc() || end != text.data() + text.size()) {
+        throw ParseError("value is not an integer");
+    }
+    if (value <= 0) {
+        throw ParseError("invalid expire time");
+    }
+    return std::chrono::seconds(value);
+}
+
 }  // namespace
 
 CommandFactory::CommandFactory() {
@@ -32,6 +45,10 @@ CommandFactory::CommandFactory() {
     registerCommand("GET", [](const Args& a) {
         requireArgs(a, 1, "GET");
         return std::make_unique<GetCommand>(a[0]);
+    });
+    registerCommand("EXPIRE", [](const Args& a) {
+        requireArgs(a, 2, "EXPIRE");
+        return std::make_unique<ExpireCommand>(a[0], parseSeconds(a[1]));
     });
     registerCommand("DEL", [](const Args& a) {
         requireArgs(a, 1, "DEL");

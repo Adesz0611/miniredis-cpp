@@ -2,6 +2,7 @@
 
 #include "miniredis/command.h"
 
+#include <chrono>
 #include <string>
 
 namespace miniredis {
@@ -32,6 +33,16 @@ public:
 
 private:
     std::string key_;
+};
+
+class ExpireCommand : public Command {
+public:
+    ExpireCommand(std::string key, std::chrono::seconds ttl);
+    std::string execute(Store& store) const override;
+
+private:
+    std::string key_;
+    std::chrono::seconds ttl_;
 };
 
 }  // namespace miniredis
