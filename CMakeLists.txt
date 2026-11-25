@@ -25,6 +25,7 @@ add_library(miniredis_core
     src/lfu_policy.cpp
     src/socket.cpp
     src/thread_pool.cpp
+    src/server.cpp
     src/commands.cpp
     src/command_factory.cpp
 )

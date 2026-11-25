@@ -16,6 +16,7 @@ add_executable(miniredis_tests
     test_eviction.cpp
     test_thread_pool.cpp
     test_socket.cpp
+    test_server.cpp
     test_commands.cpp
     test_command_factory.cpp
 )
