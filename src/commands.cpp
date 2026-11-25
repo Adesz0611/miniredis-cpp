@@ -1,5 +1,8 @@
 #include "miniredis/commands.h"
 
+#include "miniredis/command_factory.h"
+#include "miniredis/pubsub.h"
+
 #include <utility>
 
 namespace miniredis {
@@ -28,6 +31,27 @@ ExpireCommand::ExpireCommand(std::string key, std::chrono::seconds ttl)
 
 std::string ExpireCommand::execute(Store& store) const {
     return store.expire(key_, ttl_) ? "1" : "0";
+}
+
+PublishCommand::PublishCommand(Broker& broker, std::string channel, std::string message)
+    : broker_(broker), channel_(std::move(channel)), message_(std::move(message)) {}
+
+std::string PublishCommand::execute(Store&) const {
+    return std::to_string(broker_.publish(channel_, message_));
+}
+
+void registerPublish(CommandFactory& factory, Broker& broker) {
+    factory.registerCommand("PUBLISH", [&broker](const CommandFactory::Args& args) {
+        if (args.size() < 2) {
+            throw ParseError("wrong number of arguments for PUBLISH");
+        }
+        std::string message = args[1];
+        for (std::size_t i = 2; i < args.size(); ++i) {
+            message += ' ';
+            message += args[i];
+        }
+        return std::make_unique<PublishCommand>(broker, args[0], std::move(message));
+    });
 }
 
 }  // namespace miniredis

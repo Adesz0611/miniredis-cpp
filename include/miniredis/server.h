@@ -1,6 +1,7 @@
 #pragma once
 
 #include "miniredis/command_factory.h"
+#include "miniredis/pubsub.h"
 #include "miniredis/socket.h"
 #include "miniredis/store.h"
 #include "miniredis/thread_pool.h"
@@ -16,8 +17,8 @@ namespace miniredis {
 /// so @p threads is also the number of clients served concurrently.
 class Server {
 public:
-    /// The store and factory must outlive the server.
-    Server(Store& store, const CommandFactory& factory, std::size_t threads);
+    /// The store, factory and broker must outlive the server.
+    Server(Store& store, const CommandFactory& factory, Broker& broker, std::size_t threads);
     ~Server();
 
     /// Listens on 127.0.0.1:port (0 picks a free port) and returns the bound port.
@@ -26,15 +27,10 @@ public:
 
 private:
     void acceptLoop();
-    void handleClient(Socket client);
-    /// Sends a final error, then reads and discards what the client still sends. Closing with
-    /// unread data would make TCP reset the connection and the client could lose the error.
-    void rejectClient(Socket& client, const std::string& message);
-    /// Returns false if the connection should be closed.
-    bool processLine(Socket& client, const std::string& line);
 
     Store& store_;
     const CommandFactory& factory_;
+    Broker& broker_;
     ThreadPool pool_;
     Socket listener_;
     std::thread acceptor_;
