@@ -1,4 +1,6 @@
 #include "miniredis/command_factory.h"
+#include "miniredis/commands.h"
+#include "miniredis/pubsub.h"
 #include "miniredis/server.h"
 #include "miniredis/store.h"
 
@@ -30,8 +32,10 @@ int main(int argc, char** argv) {
 
     try {
         miniredis::Store store;
+        miniredis::Broker broker;
         miniredis::CommandFactory factory;
-        miniredis::Server server(store, factory, 8);
+        miniredis::registerPublish(factory, broker);
+        miniredis::Server server(store, factory, broker, 8);
 
         std::cout << "listening on 127.0.0.1:" << server.start(port) << std::endl;
 

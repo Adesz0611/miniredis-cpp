@@ -7,6 +7,9 @@
 
 namespace miniredis {
 
+class Broker;
+class CommandFactory;
+
 class SetCommand : public Command {
 public:
     SetCommand(std::string key, std::string value);
@@ -44,5 +47,20 @@ private:
     std::string key_;
     std::chrono::seconds ttl_;
 };
+
+/// Replies with the number of subscribers that received the message.
+class PublishCommand : public Command {
+public:
+    PublishCommand(Broker& broker, std::string channel, std::string message);
+    std::string execute(Store&) const override;
+
+private:
+    Broker& broker_;
+    std::string channel_;
+    std::string message_;
+};
+
+/// Adds PUBLISH to the factory. PUBLISH needs a broker, which the built-in commands do not.
+void registerPublish(CommandFactory& factory, Broker& broker);
 
 }  // namespace miniredis

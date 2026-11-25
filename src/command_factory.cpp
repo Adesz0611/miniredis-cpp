@@ -1,21 +1,13 @@
 #include "miniredis/command_factory.h"
 
 #include "miniredis/commands.h"
+#include "miniredis/text.h"
 
-#include <algorithm>
-#include <cctype>
 #include <charconv>
-#include <sstream>
 
 namespace miniredis {
 
 namespace {
-
-std::string toUpper(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
-    return s;
-}
 
 void requireArgs(const CommandFactory::Args& args, std::size_t expected, const char* name) {
     if (args.size() != expected) {
@@ -61,22 +53,16 @@ void CommandFactory::registerCommand(const std::string& name, Creator creator) {
 }
 
 std::unique_ptr<Command> CommandFactory::create(const std::string& line) const {
-    std::istringstream in(line);
-    std::string name;
-    if (!(in >> name)) {
+    auto words = splitWords(line);
+    if (words.empty()) {
         throw ParseError("empty command");
     }
 
-    auto it = creators_.find(toUpper(name));
+    auto it = creators_.find(toUpper(words.front()));
     if (it == creators_.end()) {
-        throw ParseError("unknown command '" + name + "'");
+        throw ParseError("unknown command '" + words.front() + "'");
     }
-
-    Args args;
-    for (std::string token; in >> token;) {
-        args.push_back(std::move(token));
-    }
-    return it->second(args);
+    return it->second(Args(words.begin() + 1, words.end()));
 }
 
 }  // namespace miniredis

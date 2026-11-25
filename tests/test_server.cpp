@@ -1,4 +1,5 @@
 #include "miniredis/command_factory.h"
+#include "miniredis/commands.h"
 #include "miniredis/server.h"
 #include "miniredis/store.h"
 
@@ -13,9 +14,13 @@ using namespace miniredis;
 
 class ServerTest : public ::testing::Test {
 protected:
-    ServerTest() : server(store, factory, 8) { port = server.start(0); }
+    ServerTest() : server(store, factory, broker, 8) {
+        registerPublish(factory, broker);
+        port = server.start(0);
+    }
 
     Store store;
+    Broker broker;
     CommandFactory factory;
     Server server;
     std::uint16_t port = 0;
@@ -101,8 +106,9 @@ TEST_F(ServerTest, ManyConcurrentClients) {
 
 TEST(ServerLifecycleTest, StopDoesNotHangWithIdleClientConnected) {
     Store store;
+    Broker broker;
     CommandFactory factory;
-    Server server(store, factory, 2);
+    Server server(store, factory, broker, 2);
     TestClient idle(server.start(0));
     ASSERT_EQ(idle.command("SET a 1"), "OK");
     server.stop();
@@ -111,8 +117,9 @@ TEST(ServerLifecycleTest, StopDoesNotHangWithIdleClientConnected) {
 
 TEST(ServerLifecycleTest, StartingTwiceThrows) {
     Store store;
+    Broker broker;
     CommandFactory factory;
-    Server server(store, factory, 1);
+    Server server(store, factory, broker, 1);
     server.start(0);
     EXPECT_THROW(server.start(0), std::logic_error);
 }
