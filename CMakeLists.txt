@@ -23,10 +23,13 @@ add_library(miniredis_core
     src/store.cpp
     src/lru_policy.cpp
     src/lfu_policy.cpp
+    src/socket.cpp
     src/commands.cpp
     src/command_factory.cpp
 )
+find_package(Threads REQUIRED)
 target_include_directories(miniredis_core PUBLIC include)
+target_link_libraries(miniredis_core PUBLIC Threads::Threads)
 miniredis_set_options(miniredis_core)
 
 add_executable(miniredis_server src/main.cpp)
