@@ -24,6 +24,7 @@ add_library(miniredis_core
     src/lru_policy.cpp
     src/lfu_policy.cpp
     src/text.cpp
+    src/policy_factory.cpp
     src/pubsub.cpp
     src/connection_state.cpp
     src/connection.cpp

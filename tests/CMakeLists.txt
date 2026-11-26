@@ -20,6 +20,7 @@ add_executable(miniredis_tests
     test_server_pubsub.cpp
     test_pubsub.cpp
     test_text.cpp
+    test_policy_factory.cpp
     test_commands.cpp
     test_command_factory.cpp
 )
