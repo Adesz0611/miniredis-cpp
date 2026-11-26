@@ -32,14 +32,25 @@ While subscribed, a connection receives `message <channel> <text>` lines and acc
 Values are single words; `PUBLISH` joins its remaining words with single spaces.
 
 ```sh
-./build/debug/miniredis_server 6380 &
+./build/debug/miniredis_server --port 6380 &
 printf 'SET a 1\nGET a\nQUIT\n' | nc 127.0.0.1 6380
 ```
+
+## Running
+
+```
+miniredis_server [--port N] [--threads N] [--capacity N] [--policy lru|lfu]
+```
+
+`--capacity` limits the number of keys (0 means unlimited). When it is reached, the policy
+picks the key to evict. `--threads` is the number of worker threads and also the maximum
+number of clients served at the same time.
 
 ## Build and test
 
 Requirements: a C++17 compiler, CMake >= 3.21, Ninja, GoogleTest
-(a system package is used if found, otherwise it is downloaded).
+(GoogleTest and CLI11 are taken from the system if present, otherwise downloaded at
+configure time as pinned releases).
 
 ```sh
 ./build.sh            # debug build   (also: release | asan | tsan | coverage)
