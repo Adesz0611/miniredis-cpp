@@ -24,7 +24,11 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ninja-build cmake g++ gcovr
       - run: ./test.sh coverage
       - name: Coverage report
-        run: gcovr --root . --filter 'src/' --filter 'include/' --print-summary build/coverage
+        # gcov can report negative hit counts for multithreaded code (GCC bug 68080).
+        run: >
+          gcovr --root . --filter 'src/' --filter 'include/' --exclude 'src/main.cpp'
+          --gcov-ignore-parse-errors=negative_hits.warn_once_per_file
+          --print-summary --fail-under-line 80 build/coverage
 
   static-analysis:
     runs-on: ubuntu-24.04
