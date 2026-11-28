@@ -25,6 +25,19 @@ TEST(CommandFactoryTest, ExtraWhitespaceIsIgnored) {
     EXPECT_EQ(f.create("  SET   a    1  ")->execute(s), "OK");
 }
 
+TEST(CommandFactoryTest, SetJoinsTheRemainingWordsIntoTheValue) {
+    CommandFactory f;
+    Store s;
+    f.create("SET greeting hello   big world")->execute(s);
+    EXPECT_EQ(f.create("GET greeting")->execute(s), "hello big world");
+}
+
+TEST(CommandFactoryTest, SetNeedsAKeyAndAValue) {
+    CommandFactory f;
+    EXPECT_THROW(f.create("SET"), ParseError);
+    EXPECT_THROW(f.create("SET a"), ParseError);
+}
+
 TEST(CommandFactoryTest, RejectsEmptyLine) {
     CommandFactory f;
     EXPECT_THROW(f.create(""), ParseError);
