@@ -131,6 +131,20 @@ TEST(RecoveryTest, DataSurvivesARestart) {
     EXPECT_EQ(c.command("GET tmp"), "(nil)");
 }
 
+TEST(RecoveryTest, MultiWordValuesSurviveARestartAndACompaction) {
+    TempDir dir;
+    const std::string path = dir.file("data.aof");
+    {
+        Node first(path);
+        TestClient c(first.port);
+        EXPECT_EQ(c.command("SET motto keep it simple"), "OK");
+        EXPECT_EQ(c.command("COMPACT"), "OK");
+    }
+    Node second(path);
+    TestClient c(second.port);
+    EXPECT_EQ(c.command("GET motto"), "keep it simple");
+}
+
 TEST(RecoveryTest, CrashDuringAWriteLosesOnlyTheUnfinishedCommand) {
     TempDir dir;
     const std::string path = dir.file("data.aof");

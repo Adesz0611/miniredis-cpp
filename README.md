@@ -30,7 +30,8 @@ are case-insensitive. The server listens on 127.0.0.1 only.
 
 While subscribed, a connection receives `message <channel> <text>` lines and accepts only
 `SUBSCRIBE`, `UNSUBSCRIBE` and `QUIT`. Errors are reported as `ERR <reason>`.
-Values are single words; `PUBLISH` joins its remaining words with single spaces.
+`SET` and `PUBLISH` join their remaining words with single spaces, so a value can contain
+several words (runs of whitespace collapse to one space).
 
 ```sh
 ./build/debug/miniredis_server --port 6380 &

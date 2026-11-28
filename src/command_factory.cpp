@@ -27,12 +27,23 @@ std::chrono::seconds parseSeconds(const std::string& text) {
     return std::chrono::seconds(value);
 }
 
+std::string joinWords(const CommandFactory::Args& args, std::size_t from) {
+    std::string result = args[from];
+    for (std::size_t i = from + 1; i < args.size(); ++i) {
+        result += ' ';
+        result += args[i];
+    }
+    return result;
+}
+
 }  // namespace
 
 CommandFactory::CommandFactory() {
     registerCommand("SET", [](const Args& a) {
-        requireArgs(a, 2, "SET");
-        return std::make_unique<SetCommand>(a[0], a[1]);
+        if (a.size() < 2) {
+            throw ParseError("wrong number of arguments for SET");
+        }
+        return std::make_unique<SetCommand>(a[0], joinWords(a, 1));
     });
     registerCommand("GET", [](const Args& a) {
         requireArgs(a, 1, "GET");
