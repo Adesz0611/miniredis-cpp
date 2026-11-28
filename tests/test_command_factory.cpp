@@ -68,3 +68,33 @@ TEST(CommandFactoryTest, RejectsInvalidExpireArguments) {
     EXPECT_THROW(f.create("EXPIRE a 0"), ParseError);
     EXPECT_THROW(f.create("EXPIRE a -5"), ParseError);
 }
+
+TEST(CommandFactoryTest, DecoratorReceivesTheWordsAndCanReplaceTheCommand) {
+    struct Wrapped : Command {
+        explicit Wrapped(std::string inner) : inner_(std::move(inner)) {}
+        std::string execute(Store&) const override { return "wrapped " + inner_; }
+        std::string inner_;
+    };
+    CommandFactory f;
+    std::vector<std::string> seen;
+    f.setDecorator([&seen](const CommandFactory::Args& words, std::unique_ptr<Command> command) {
+        seen = words;
+        Store scratch;
+        return std::make_unique<Wrapped>(command->execute(scratch));
+    });
+    Store s;
+    EXPECT_EQ(f.create("set  a 1")->execute(s), "wrapped OK");
+    EXPECT_EQ(seen, (std::vector<std::string>{"set", "a", "1"}));
+}
+
+TEST(CommandFactoryTest, DecoratorIsNotCalledForInvalidCommands) {
+    CommandFactory f;
+    int calls = 0;
+    f.setDecorator([&calls](const CommandFactory::Args&, std::unique_ptr<Command> command) {
+        ++calls;
+        return command;
+    });
+    EXPECT_THROW(f.create("SET a"), ParseError);
+    EXPECT_THROW(f.create("NOPE"), ParseError);
+    EXPECT_EQ(calls, 0);
+}

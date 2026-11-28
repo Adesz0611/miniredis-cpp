@@ -25,6 +25,7 @@ are case-insensitive. The server listens on 127.0.0.1 only.
 | `PUBLISH channel message...` | number of subscribers that received it |
 | `SUBSCRIBE channel...` | `subscribed <channel> <count>` per channel |
 | `UNSUBSCRIBE [channel...]` | `unsubscribed <channel> <count>` per channel (all if none given) |
+| `COMPACT` | `OK`; rewrites the append-only file (only with `--aof`) |
 | `QUIT` | `OK`, then the connection is closed |
 
 While subscribed, a connection receives `message <channel> <text>` lines and accepts only
@@ -40,11 +41,23 @@ printf 'SET a 1\nGET a\nQUIT\n' | nc 127.0.0.1 6380
 
 ```
 miniredis_server [--port N] [--threads N] [--capacity N] [--policy lru|lfu]
+                 [--aof FILE [--aof-fsync]]
 ```
 
 `--capacity` limits the number of keys (0 means unlimited). When it is reached, the policy
 picks the key to evict. `--threads` is the number of worker threads and also the maximum
 number of clients served at the same time.
+
+## Persistence
+
+With `--aof FILE` every `SET`, `DEL` and `EXPIRE` is appended to the file before it is
+executed, and the file is replayed when the server starts. A last line that a crash cut short
+is ignored. `COMPACT` shrinks the file to the commands that rebuild the current state.
+`--aof-fsync` calls `fsync` after every command. See `docs/DESIGN.md` for the limits.
+
+```sh
+./build/debug/miniredis_server --aof data.aof
+```
 
 ## Build and test
 
