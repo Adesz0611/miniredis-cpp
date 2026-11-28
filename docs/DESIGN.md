@@ -1,5 +1,23 @@
 # Design
 
+## Overview
+A request travels through these parts:
+
+```
+client --TCP--> Server (accept thread) --> ThreadPool --> Connection (one per client)
+                                                             |  line -> ConnectionState
+                                                             v
+                                       CommandFactory --> Command --> Store
+                                                 |                      ^
+                                    (decorator)  +--> LoggedCommand --> AppendOnlyLog
+                                                             |
+                                          PUBLISH --> Broker --> Subscriber (other Connections)
+```
+
+`Store` knows nothing about the network, the protocol or the log, so it is tested directly.
+Everything above it is wired together in `main.cpp` and in the test fixtures by passing
+objects into constructors.
+
 ## Command
 Every protocol command (`SET`, `GET`, `DEL`, `EXPIRE`) is a `Command` object with a single
 `execute(Store&)`. The network layer does not know what a command does, it only runs it.
@@ -68,8 +86,9 @@ server started without `--aof` simply has no decorator.
   remaining TTL), writes it as `SET`/`EXPIRE` lines to `<file>.tmp`, calls `fsync` and
   renames it over the log, then syncs the directory. `rename` is atomic, so after a crash the
   file is either the old log or the new one. The temporary file stays open and becomes the
-  log's file descriptor, so nothing can fail after the rename. The log lock is held during this, so no command can slip between the
-  snapshot and the rename. If anything fails the old log stays in place.
+  log's file descriptor, so nothing can fail after the rename. The log lock is held during
+  this, so no command can slip between the snapshot and the rename. If anything fails the old
+  log stays in place.
 - **Lock order.** Always log mutex, then store mutex. The store never calls the log.
 
 Known limits:
@@ -87,6 +106,25 @@ Known limits:
 - `--aof-fsync` is off by default: the data survives a process crash (it is in the OS page
   cache) but not necessarily a power loss.
 - Compaction is manual. It blocks all writes while it runs.
+
+## RAII
+Every resource has an owner that releases it in a destructor, so no code path can forget it:
+`Socket` (file descriptor, move-only), `ThreadPool` (joins its workers), `std::lock_guard`
+for all mutexes, the file descriptors in `AppendOnlyLog`, and `Server::stop()` through the
+destructor. There is no manual `close`/`delete` on an error path.
+
+## Threads and locks
+- One accept thread, plus one pool thread per open connection. A pool thread that serves a
+  connection is busy until the client disconnects, so `--threads` is the client limit.
+- Shutdown uses `poll` with a 100 ms timeout in the accept and read loops and an atomic
+  `running_` flag, so no thread is blocked forever and `stop()` needs no tricks.
+- Locks: `Store::mutex_`, `Broker::mutex_`, `Connection::writeMutex_`, `AppendOnlyLog::mutex_`.
+  Orders that occur: log -> store (a logged command runs inside the log lock) and
+  connection write -> broker (`subscribe`). `Broker::publish` never holds the broker lock while
+  delivering, so it never takes the write mutex under it. No other lock is taken while holding
+  these, so there is no cycle.
+- `EvictionPolicy` has no lock of its own; it is only called with the store lock held.
+- The tests run under AddressSanitizer, UBSan and ThreadSanitizer (also in CI).
 
 ## Dependency injection
 `Store` receives its `Clock` and `EvictionPolicy` through the constructor. Tests pass a
