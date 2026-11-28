@@ -1,5 +1,7 @@
 #include "miniredis/connection.h"
 
+#include <system_error>
+
 namespace miniredis {
 
 namespace {
@@ -83,6 +85,8 @@ std::string Connection::execute(const std::string& line) {
     try {
         return factory_.create(line)->execute(store_);
     } catch (const ParseError& e) {
+        return std::string("ERR ") + e.what();
+    } catch (const std::system_error& e) {
         return std::string("ERR ") + e.what();
     }
 }
