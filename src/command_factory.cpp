@@ -52,6 +52,8 @@ void CommandFactory::registerCommand(const std::string& name, Creator creator) {
     creators_[toUpper(name)] = std::move(creator);
 }
 
+void CommandFactory::setDecorator(Decorator decorator) { decorator_ = std::move(decorator); }
+
 std::unique_ptr<Command> CommandFactory::create(const std::string& line) const {
     auto words = splitWords(line);
     if (words.empty()) {
@@ -62,7 +64,11 @@ std::unique_ptr<Command> CommandFactory::create(const std::string& line) const {
     if (it == creators_.end()) {
         throw ParseError("unknown command '" + words.front() + "'");
     }
-    return it->second(Args(words.begin() + 1, words.end()));
+    auto command = it->second(Args(words.begin() + 1, words.end()));
+    if (decorator_) {
+        return decorator_(words, std::move(command));
+    }
+    return command;
 }
 
 }  // namespace miniredis
