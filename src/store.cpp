@@ -106,6 +106,24 @@ void Store::makeRoom() {
     }
 }
 
+std::vector<Store::SnapshotItem> Store::snapshot() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto now = clock_.now();
+    std::vector<SnapshotItem> items;
+    items.reserve(data_.size());
+    for (const auto& kv : data_) {
+        if (isExpired(kv.second)) {
+            continue;
+        }
+        std::optional<std::chrono::milliseconds> ttl;
+        if (kv.second.expiresAt) {
+            ttl = std::chrono::duration_cast<std::chrono::milliseconds>(*kv.second.expiresAt - now);
+        }
+        items.push_back(SnapshotItem{kv.first, kv.second.value, ttl});
+    }
+    return items;
+}
+
 std::size_t Store::size() const {
     std::lock_guard<std::mutex> lock(mutex_);
     std::size_t live = 0;

@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace miniredis {
 
@@ -36,6 +37,15 @@ public:
 
     /// Drops all expired keys and returns how many were removed.
     std::size_t removeExpired();
+
+    struct SnapshotItem {
+        std::string key;
+        std::string value;
+        std::optional<std::chrono::milliseconds> ttl;  // time left, if the key expires
+    };
+
+    /// Consistent copy of all live keys, in unspecified order.
+    std::vector<SnapshotItem> snapshot() const;
 
     /// Number of live (not expired) keys.
     std::size_t size() const;
